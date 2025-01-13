@@ -6,7 +6,7 @@ using MOAR.Patches;
 namespace MOAR
 {
     [
-        BepInPlugin("MOAR.settings", "MOAR", "2.6.7"),
+        BepInPlugin("MOAR.settings", "MOAR", "2.6.8"),
         BepInDependency("com.fika.core", BepInDependency.DependencyFlags.SoftDependency)
     ]
     public class Plugin : BaseUnityPlugin
@@ -22,6 +22,17 @@ namespace MOAR
 
             new NotificationPatch().Enable();
             new NotificationPatch2().Enable();
+        }
+
+        public void Update()
+        {
+            if (Methods.IsKeyPressed(Settings.ShowPresetOnKeybind.Value))
+            {
+                Methods.DisplayMessage(
+                    "Current preset is " + Routers.GetAnnouncePresetName(),
+                    EFT.Communications.ENotificationIconType.EntryPoint
+                );
+            } 
         }
     };
 }

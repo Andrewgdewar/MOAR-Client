@@ -5,7 +5,6 @@ using EFT;
 using HarmonyLib;
 using MOAR.Helpers;
 using SPT.Reflection.Patching;
-using UnityEngine.Playables;
 
 namespace MOAR.Patches
 {
