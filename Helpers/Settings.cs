@@ -1,6 +1,5 @@
 using System;
 using System.Linq;
-using System.Reflection;
 using BepInEx.Bootstrap;
 using BepInEx.Configuration;
 using BepInEx.Logging;
@@ -19,6 +18,8 @@ namespace MOAR.Helpers
         public static ConfigEntry<bool> debug;
         public static ConfigEntry<double> pmcDifficulty;
         public static ConfigEntry<double> scavDifficulty;
+
+        public static ConfigEntry<KeyboardShortcut> ShowPresetOnKeybind;
 
         public static ConfigEntry<bool> zombiesEnabled;
         public static ConfigEntry<double> zombieWaveDistribution;
@@ -186,6 +187,13 @@ namespace MOAR.Helpers
                     100
                 );
             }
+
+            ShowPresetOnKeybind = Config.Bind(
+                "1. Main Settings",
+                "Display preset keyboard shortcut",
+                new KeyboardShortcut(KeyCode.Equals),
+                "Keybind to display current MOAR preset."
+            );
 
             // Main SETTINGS =====================================
             CreateSimpleButton(
