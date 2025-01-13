@@ -1,3 +1,4 @@
+using System;
 using BepInEx;
 using BepInEx.Configuration;
 using EFT.Communications;
@@ -23,8 +24,15 @@ namespace MOAR.Helpers
 
         public static async void RefreshLocationInfo()
         {
-            await PatchConstants.BackEndSession.GetLevelSettings();
-            // await PatchConstants.BackEndSession.GetWeatherAndTime();
+            try
+            {
+                await PatchConstants.BackEndSession.GetLevelSettings();
+                // await PatchConstants.BackEndSession.GetWeatherAndTime();
+            }
+            catch (NullReferenceException)
+            {
+                Plugin.LogSource.LogError("[MOAR] Unable to refresh location info. User is most likely in menu.");
+            }
         }
 
         public static bool IsKeyPressed(KeyboardShortcut key)
