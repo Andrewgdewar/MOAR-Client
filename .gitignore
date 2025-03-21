@@ -371,3 +371,5 @@ ServerMod/dist
 /bin/*
 
 bin/
+
+.idea/
