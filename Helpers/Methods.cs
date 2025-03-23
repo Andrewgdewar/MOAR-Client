@@ -1,6 +1,7 @@
 using Comfort.Common;
 using EFT;
 using EFT.Communications;
+using MOAR.Components.Notifications;
 using SPT.Reflection.Utils;
 
 namespace MOAR.Helpers
@@ -9,14 +10,15 @@ namespace MOAR.Helpers
     {
         public static void DisplayMessage(
             string message,
-            ENotificationIconType notificationType = ENotificationIconType.Quest
+            ENotificationIconType notificationIcon = ENotificationIconType.Quest
         )
         {
-            var currentMessage = new GClass2269(
-                message,
-                ENotificationDurationType.Long,
-                notificationType
-            );
+            DebugNotification currentMessage = new()
+            {
+                Duration = ENotificationDurationType.Long,
+                Notification = message,
+                NotificationIcon = notificationIcon
+            };
 
             NotificationManagerClass.DisplayNotification(currentMessage);
         }

@@ -35,6 +35,7 @@ namespace MOAR
             {
                 new OnGameStartedPatch().Enable();
             }
+
             new NotificationPatch().Enable();
         }
 
@@ -47,7 +48,7 @@ namespace MOAR
                     Routers.DeleteBotSpawn();
                     Methods.DisplayMessage(
                         "Deleted 1 bot spawn point from "
-                            + Singleton<GameWorld>.Instance.MainPlayer.Location,
+                        + Singleton<GameWorld>.Instance.MainPlayer.Location,
                         EFT.Communications.ENotificationIconType.Default
                     );
                 }
@@ -60,7 +61,7 @@ namespace MOAR
                     Routers.AddBotSpawn();
                     Methods.DisplayMessage(
                         "Added 1 bot spawn point to "
-                            + Singleton<GameWorld>.Instance.MainPlayer.Location,
+                        + Singleton<GameWorld>.Instance.MainPlayer.Location,
                         EFT.Communications.ENotificationIconType.Default
                     );
                 }
@@ -73,7 +74,7 @@ namespace MOAR
                     Routers.AddSniperSpawn();
                     Methods.DisplayMessage(
                         "Added 1 sniper spawn point to "
-                            + Singleton<GameWorld>.Instance.MainPlayer.Location,
+                        + Singleton<GameWorld>.Instance.MainPlayer.Location,
                         EFT.Communications.ENotificationIconType.Default
                     );
                 }
@@ -86,7 +87,7 @@ namespace MOAR
                     Routers.AddPlayerSpawn();
                     Methods.DisplayMessage(
                         "Added 1 player spawn point to "
-                            + Singleton<GameWorld>.Instance.MainPlayer.Location,
+                        + Singleton<GameWorld>.Instance.MainPlayer.Location,
                         EFT.Communications.ENotificationIconType.Default
                     );
                 }
