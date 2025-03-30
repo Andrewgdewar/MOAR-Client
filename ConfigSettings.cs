@@ -1,4 +1,5 @@
-﻿using System;
+﻿// ConfigSettings.cs
+using System;
 
 namespace MOAR
 {
@@ -8,6 +9,9 @@ namespace MOAR
     /// </summary>
     public class ConfigSettings
     {
+        public string Name { get; set; }
+        public string Label { get; set; }
+
         public double pmcDifficulty { get; set; }
         public double scavDifficulty { get; set; }
 

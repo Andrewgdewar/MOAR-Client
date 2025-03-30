@@ -1,4 +1,5 @@
-﻿using System;
+﻿// Routers.cs
+using System;
 using System.Linq;
 using System.Collections.Generic;
 using BepInEx.Configuration;
@@ -26,7 +27,7 @@ namespace MOAR.Helpers
             catch (Exception ex)
             {
                 Plugin.LogSource.LogWarning($"[GetCurrentPresetLabel] Falling back to client config: {ex.Message}");
-                return Settings.currentPreset?.Value ?? "live-like";
+                return Settings.currentPreset?.Value ?? Settings.ServerStoredDefaults?.Name ?? "live-like";
             }
         }
 
@@ -39,7 +40,7 @@ namespace MOAR.Helpers
             catch (Exception ex)
             {
                 Plugin.LogSource.LogWarning($"[GetAnnouncePresetLabel] Falling back to client config: {ex.Message}");
-                return Settings.currentPreset?.Value ?? "live-like";
+                return Settings.currentPreset?.Value ?? Settings.ServerStoredDefaults?.Name ?? "live-like";
             }
         }
 
@@ -47,21 +48,21 @@ namespace MOAR.Helpers
         {
             var label = GetCurrentPresetLabel();
             var preset = FindPresetByLabel(label);
-            return preset?.Name ?? "Unknown";
+            return preset?.Name ?? label ?? "Unknown";
         }
 
         public static string GetAnnouncePresetName()
         {
             var label = GetAnnouncePresetLabel();
             var preset = FindPresetByLabel(label);
-            return preset?.Name ?? "Unknown";
+            return preset?.Name ?? label ?? "Unknown";
         }
 
         private static Preset FindPresetByLabel(string label)
         {
             return Settings.PresetList?.FirstOrDefault(p =>
-                p.Label.Equals(label, StringComparison.OrdinalIgnoreCase) ||
-                p.Name.Equals(label, StringComparison.OrdinalIgnoreCase));
+                string.Equals(p.Label, label, StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(p.Name, label, StringComparison.OrdinalIgnoreCase));
         }
 
         public static string SetPreset(string label)

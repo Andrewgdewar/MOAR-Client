@@ -73,7 +73,6 @@ namespace MOAR.Helpers
         public static ManualLogSource Log;
         public static List<Preset> PresetList;
         public static double LastUpdatedServer;
-        public static string HostPresetLabel = "Unknown";
 
         public static void Init(ConfigFile config)
         {
@@ -148,13 +147,13 @@ namespace MOAR.Helpers
 
         private static void OnPresetChange()
         {
-            var selected = PresetList.FirstOrDefault(p => p.Name == currentPreset.Value);
+            var selected = Settings.PresetList.FirstOrDefault(p => p.Name == currentPreset.Value);
             if (selected != null)
             {
                 string label = selected.Label ?? selected.Name;
                 if (!IsFika)
                     Methods.DisplayMessage($"Current preset: {label}", ENotificationIconType.Quest);
-                ApplyPresetSettings(selected.Settings);
+                ApplyPresetSettings(selected);
                 Routers.SetPreset(selected.Name);
             }
             else
@@ -163,42 +162,34 @@ namespace MOAR.Helpers
             }
         }
 
-        private static void ApplyPresetSettings(object settings)
+        private static void ApplyPresetSettings(Preset preset)
         {
-            if (settings == null) return;
+            if (preset?.Settings == null) return;
 
             try
             {
-                var dict = JsonConvert.DeserializeObject<Dictionary<string, object>>(JsonConvert.SerializeObject(settings));
+                var dict = JsonConvert.DeserializeObject<Dictionary<string, object>>(JsonConvert.SerializeObject(preset.Settings));
 
-                ApplySetting("randomSpawns", (bool val) => randomSpawns.Value = val);
-                ApplySetting("spawnSmoothing", (bool val) => spawnSmoothing.Value = val);
-                ApplySetting("startingPmcs", (bool val) => startingPmcs.Value = val);
+                void TrySet<T>(string key, Action<T> apply)
+                {
+                    if (dict.TryGetValue(key, out var value))
+                    {
+                        try { apply((T)Convert.ChangeType(value, typeof(T))); } catch { }
+                    }
+                }
 
-                ApplySetting("scavGroupChance", (double val) => scavGroupChance.Value = val);
-                ApplySetting("scavMaxGroupSize", (int val) => scavMaxGroupSize.Value = val);
-                ApplySetting("pmcGroupChance", (double val) => pmcGroupChance.Value = val);
-                ApplySetting("pmcMaxGroupSize", (int val) => pmcMaxGroupSize.Value = val);
+                TrySet("randomSpawns", (bool val) => randomSpawns.Value = val);
+                TrySet("spawnSmoothing", (bool val) => spawnSmoothing.Value = val);
+                TrySet("startingPmcs", (bool val) => startingPmcs.Value = val);
+
+                TrySet("scavGroupChance", (double val) => scavGroupChance.Value = val);
+                TrySet("scavMaxGroupSize", (int val) => scavMaxGroupSize.Value = val);
+                TrySet("pmcGroupChance", (double val) => pmcGroupChance.Value = val);
+                TrySet("pmcMaxGroupSize", (int val) => pmcMaxGroupSize.Value = val);
             }
             catch (Exception ex)
             {
                 Log.LogError($"[ApplyPresetSettings] Failed to apply preset: {ex.Message}");
-            }
-        }
-
-        private static void ApplySetting<T>(string key, Action<T> apply)
-        {
-            try
-            {
-                var dict = JsonConvert.DeserializeObject<Dictionary<string, object>>(JsonConvert.SerializeObject(ServerStoredValues));
-                if (dict != null && dict.TryGetValue(key, out var value))
-                {
-                    apply((T)Convert.ChangeType(value, typeof(T)));
-                }
-            }
-            catch (Exception ex)
-            {
-                Log.LogWarning($"Failed to apply key '{key}' to type {typeof(T)}: {ex.Message}");
             }
         }
 
@@ -213,13 +204,8 @@ namespace MOAR.Helpers
 
         public static void AnnounceManually()
         {
-            if (IsFika)
-            {
-                Methods.DisplayMessage($"Current preset: {HostPresetLabel}", ENotificationIconType.Quest);
-                return;
-            }
-
-            var selected = PresetList.FirstOrDefault(p => p.Name == currentPreset.Value);
+            if (IsFika) return;
+            var selected = Settings.PresetList.FirstOrDefault(p => p.Name == currentPreset.Value);
             if (selected != null)
                 Methods.DisplayMessage($"Current preset: {selected.Label}", ENotificationIconType.Quest);
             else
