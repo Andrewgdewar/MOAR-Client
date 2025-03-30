@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Linq;
-using System.Collections.Generic; // ✅ Needed for List<>
+using System.Collections.Generic;
 using BepInEx.Configuration;
 using Newtonsoft.Json;
 using SPT.Common.Http;

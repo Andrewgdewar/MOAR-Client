@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using BepInEx;
 using BepInEx.Configuration;
 using BepInEx.Logging;
@@ -15,6 +16,8 @@ using MOAR.Components.Notifications;
 using MOAR.Networking;
 using Fika.Core.Networking;
 using Fika.Core.Coop.Utils;
+using Fika.Core.Coop;
+using Fika.Core.Coop.GameMode;
 
 namespace MOAR
 {
@@ -32,16 +35,24 @@ namespace MOAR
             LogSource = Logger;
             new Harmony("com.moar.patches").PatchAll();
 
-            if (Settings.IsFika && Singleton<IFikaNetworkManager>.Instantiated)
+            if (Settings.IsFika && Singleton<FikaServer>.Instantiated && Singleton<FikaClient>.Instantiated)
             {
                 DebugNotification.RegisterNetworkHandler();
 
-                // Register packet handler using new FIKA packet system
-                Singleton<IFikaNetworkManager>.Instance.RegisterPacket<PresetSyncPacket>(OnPresetSyncReceived);
+                // Correct packet registration using IFikaNetworkManager interface
+                var networkManager = Singleton<IFikaNetworkManager>.Instance;
+                if (networkManager != null)
+                {
+                    networkManager.RegisterPacket<PresetSyncPacket>(packet => OnClientReceivedPresetPacket(packet));
+                }
+                else
+                {
+                    LogSource.LogError("FIKA NetworkManager not available for packet registration.");
+                }
             }
             else if (Settings.IsFika)
             {
-                LogSource.LogError("FIKA detected but IFikaNetworkManager is unavailable.");
+                LogSource.LogError("FIKA detected but networking components unavailable.");
             }
         }
 
@@ -117,14 +128,11 @@ namespace MOAR
 
         private static void BroadcastPresetToClients(string presetName, string presetLabel)
         {
-            if (!FikaBackendUtils.IsServer) return;
-
             var packet = new PresetSyncPacket(presetName, presetLabel);
             Singleton<FikaServer>.Instance.SendDataToAll(ref packet, DeliveryMethod.ReliableOrdered, null);
         }
 
-
-        private static void OnPresetSyncReceived(PresetSyncPacket packet)
+        private static void OnClientReceivedPresetPacket(PresetSyncPacket packet)
         {
             _hostPresetLabel = packet.PresetLabel;
             Settings.currentPreset.Value = packet.PresetName;
