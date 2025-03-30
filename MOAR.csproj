@@ -65,6 +65,7 @@
     <Reference Include="spt-reflection">
       <HintPath>..\..\RLO\RealisticLighting\References\spt-reflection.dll</HintPath>
     </Reference>
+    <Reference Include="System" />
     <Reference Include="System.Core">
       <HintPath>..\..\RLO\RealisticLighting\References\System.Core.dll</HintPath>
     </Reference>
@@ -103,6 +104,7 @@
     <Compile Include="Helpers\UIUtils.cs" />
     <Compile Include="Ixyz.cs" />
     <Compile Include="Helpers\Preset.cs" />
+    <Compile Include="Networking\PresetSyncPacket.cs" />
     <Compile Include="Patches\AddEnemyPatch.cs" />
     <Compile Include="Patches\BotZoneDumper.cs" />
     <Compile Include="Patches\NotificationPatch.cs" />

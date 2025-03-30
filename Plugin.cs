@@ -7,9 +7,14 @@ using Comfort.Common;
 using EFT;
 using EFT.Communications;
 using HarmonyLib;
+using LiteNetLib;
+using LiteNetLib.Utils;
 using MOAR.Helpers;
 using MOAR.Patches;
 using MOAR.Components.Notifications;
+using MOAR.Networking;
+using Fika.Core.Networking;
+using Fika.Core.Coop.Utils;
 
 namespace MOAR
 {
@@ -20,10 +25,24 @@ namespace MOAR
         public static ManualLogSource LogSource;
         private static readonly Random _rng = new();
 
+        private static string _hostPresetLabel = "Unknown";
+
         private void Awake()
         {
             LogSource = Logger;
             new Harmony("com.moar.patches").PatchAll();
+
+            if (Settings.IsFika && Singleton<IFikaNetworkManager>.Instantiated)
+            {
+                DebugNotification.RegisterNetworkHandler();
+
+                // Register packet handler using new FIKA packet system
+                Singleton<IFikaNetworkManager>.Instance.RegisterPacket<PresetSyncPacket>(OnPresetSyncReceived);
+            }
+            else if (Settings.IsFika)
+            {
+                LogSource.LogError("FIKA detected but IFikaNetworkManager is unavailable.");
+            }
         }
 
         private void Start()
@@ -32,8 +51,10 @@ namespace MOAR
             Routers.Init(Config);
             EnablePatches();
 
-            if (Settings.IsFika)
-                DebugNotification.RegisterNetworkHandler();
+            if (Settings.IsFika && FikaBackendUtils.IsServer)
+            {
+                BroadcastPresetToClients(Settings.currentPreset.Value, Routers.GetAnnouncePresetName());
+            }
         }
 
         private void EnablePatches()
@@ -62,14 +83,16 @@ namespace MOAR
 
             if (Settings.AnnounceKey.Value.BetterIsDown())
             {
-                var presetName = Routers.GetAnnouncePresetName();
+                var presetName = Settings.IsFika ? _hostPresetLabel : Routers.GetAnnouncePresetName();
                 var notification = new DebugNotification
                 {
                     Notification = $"Current preset is {presetName}",
                     NotificationIcon = ENotificationIconType.EntryPoint
                 };
                 notification.Display();
-                notification.BroadcastToClients();
+
+                if (Settings.IsFika && FikaBackendUtils.IsServer)
+                    notification.BroadcastToClients();
             }
         }
 
@@ -87,7 +110,33 @@ namespace MOAR
                 NotificationIcon = ENotificationIconType.Default
             };
             notification.Display();
-            notification.BroadcastToClients();
+
+            if (Settings.IsFika && FikaBackendUtils.IsServer)
+                notification.BroadcastToClients();
+        }
+
+        private static void BroadcastPresetToClients(string presetName, string presetLabel)
+        {
+            if (!FikaBackendUtils.IsServer) return;
+
+            var packet = new PresetSyncPacket(presetName, presetLabel);
+            Singleton<FikaServer>.Instance.SendDataToAll(ref packet, DeliveryMethod.ReliableOrdered, null);
+        }
+
+
+        private static void OnPresetSyncReceived(PresetSyncPacket packet)
+        {
+            _hostPresetLabel = packet.PresetLabel;
+            Settings.currentPreset.Value = packet.PresetName;
+
+            var notification = new DebugNotification
+            {
+                Notification = $"Preset synced from host: {_hostPresetLabel}",
+                NotificationIcon = ENotificationIconType.EntryPoint
+            };
+            notification.Display();
+
+            LogSource.LogInfo($"Preset synced from host: {_hostPresetLabel}");
         }
 
         public static string GetFlairMessage()
@@ -95,11 +144,8 @@ namespace MOAR
             var suffixes = new List<string>
             {
                 ", good luck!", ", may the bots ever be in your favour.", ", you're probably screwed.",
-                ", may your raids be bug-free.", ", enjoy the dumpster fire.", ", hope you brought snacks.",
-                ", good luck, seriously.", ", prepare to be crushed.", ", you're about to get wrecked.", ", enjoy the show.",
-                ", good luck, you'll need it.", ", enjoy the carnage.", ", try not to rage-quit.", ", don't say I didn't warn you.",
-                ", best of luck surviving that.", ", it's going to be a long day for you.", ", be water my friend.",
-                ", let the feelings of dread pass over you.", ", black a leg!", ", it's about to get ugly. Enjoy."
+                ", enjoy the dumpster fire.", ", hope you brought snacks.", ", prepare to be crushed.",
+                ", try not to rage-quit.", ", it's going to be a long day for you.", ", let the feelings of dread pass over you.",
             };
 
             return suffixes[_rng.Next(suffixes.Count)];
