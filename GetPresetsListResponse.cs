@@ -1,12 +1,16 @@
-﻿using MOAR.Helpers;
+﻿using System.Collections.Generic;
 
-namespace MOAR
+namespace MOAR.Helpers
 {
     /// <summary>
-    /// Represents a response from the server containing a list of spawn presets.
+    /// Represents a deserialized server response containing available AI spawn presets.
+    /// Used by the client to populate the dropdown and apply server-defined presets.
     /// </summary>
     public class GetPresetsListResponse
     {
-        public Preset[] data { get; set; }
+        /// <summary>
+        /// The list of all defined presets returned from the server.
+        /// </summary>
+        public List<Preset> data { get; set; }
     }
 }

@@ -1,4 +1,5 @@
-﻿using System.Reflection;
+﻿using System.Linq;
+using System.Reflection;
 using EFT;
 using EFT.Communications;
 using HarmonyLib;
@@ -19,11 +20,18 @@ namespace MOAR.Patches
         private static bool Prefix()
         {
             if (!Settings.ShowPresetOnRaidStart.Value)
-                return false;
+                return true;
+
+            // Don't double-announce in FIKA since host will handle the message
+            if (Settings.IsFika)
+                return true;
 
             string flair = Plugin.GetFlairMessage();
-            string preset = Routers.GetAnnouncePresetName();
-            Methods.DisplayMessage($"Current preset is {preset}{flair}", ENotificationIconType.EntryPoint);
+
+            var selected = Settings.PresetList.FirstOrDefault(p => p.Name == Settings.currentPreset.Value);
+            string label = selected?.Label ?? Settings.currentPreset.Value ?? "Unknown";
+
+            Methods.DisplayMessage($"Current preset is {label}{flair}", ENotificationIconType.EntryPoint);
 
             return true;
         }

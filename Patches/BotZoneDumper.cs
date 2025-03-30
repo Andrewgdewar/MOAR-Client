@@ -2,11 +2,12 @@
 using EFT.Game.Spawning;
 using HarmonyLib;
 using SPT.Reflection.Patching;
+using MOAR.Helpers; 
 
 namespace MOAR.Patches
 {
     /// <summary>
-    /// Logs all BotZones on map load. Debug/dev usage.
+    /// Logs all BotZones on map load. Useful for debugging spawn zones.
     /// </summary>
     public class BotZoneDumper : ModulePatch
     {
@@ -16,11 +17,15 @@ namespace MOAR.Patches
         [PatchPostfix]
         public static void Postfix(LocationScene __instance)
         {
-            if (__instance?.BotZones == null) return;
+            if (__instance?.BotZones == null || __instance.BotZones.Length == 0)
+                return;
+
+            if (!Settings.debug.Value)
+                return;
 
             foreach (var botZone in __instance.BotZones)
             {
-                Plugin.LogSource.LogInfo($"BotZone name: {botZone.NameZone}, ID: {botZone.Id}");
+                Plugin.LogSource.LogInfo($"[BotZoneDumper] BotZone name: {botZone.NameZone}, ID: {botZone.Id}");
             }
         }
     }

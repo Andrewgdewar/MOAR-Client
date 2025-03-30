@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using System.Collections.Generic; // ✅ Needed for List<>
 using BepInEx.Configuration;
 using Newtonsoft.Json;
 using SPT.Common.Http;
@@ -7,27 +8,60 @@ using MOAR.Helpers;
 
 namespace MOAR.Helpers
 {
-    internal class Routers
+    /// <summary>
+    /// Handles all server API routing logic and HTTP requests for config and presets.
+    /// </summary>
+    internal static class Routers
     {
         public static void Init(ConfigFile config) { }
 
         // --- Preset Accessors ---
 
-        public static string GetCurrentPresetLabel() => RequestHandler.GetJson("/moar/currentPreset");
-        public static string GetAnnouncePresetLabel() => RequestHandler.GetJson("/moar/announcePreset");
+        public static string GetCurrentPresetLabel()
+        {
+            try
+            {
+                return RequestHandler.GetJson("/moar/currentPreset")?.Trim() ?? string.Empty;
+            }
+            catch (Exception ex)
+            {
+                Plugin.LogSource.LogWarning($"[GetCurrentPresetLabel] Falling back to client config: {ex.Message}");
+                return Settings.currentPreset?.Value ?? "live-like";
+            }
+        }
+
+        public static string GetAnnouncePresetLabel()
+        {
+            try
+            {
+                return RequestHandler.GetJson("/moar/announcePreset")?.Trim() ?? string.Empty;
+            }
+            catch (Exception ex)
+            {
+                Plugin.LogSource.LogWarning($"[GetAnnouncePresetLabel] Falling back to client config: {ex.Message}");
+                return Settings.currentPreset?.Value ?? "live-like";
+            }
+        }
 
         public static string GetCurrentPresetName()
         {
             var label = GetCurrentPresetLabel();
-            var preset = Settings.PresetList?.FirstOrDefault(p => p.Label == label);
+            var preset = FindPresetByLabel(label);
             return preset?.Name ?? "Unknown";
         }
 
         public static string GetAnnouncePresetName()
         {
             var label = GetAnnouncePresetLabel();
-            var preset = Settings.PresetList?.FirstOrDefault(p => p.Label == label);
+            var preset = FindPresetByLabel(label);
             return preset?.Name ?? "Unknown";
+        }
+
+        private static Preset FindPresetByLabel(string label)
+        {
+            return Settings.PresetList?.FirstOrDefault(p =>
+                p.Label.Equals(label, StringComparison.OrdinalIgnoreCase) ||
+                p.Name.Equals(label, StringComparison.OrdinalIgnoreCase));
         }
 
         public static string SetPreset(string label)
@@ -44,22 +78,22 @@ namespace MOAR.Helpers
             }
         }
 
-        public static Preset[] GetPresetsList()
+        public static List<Preset> GetPresetsList()
         {
             try
             {
                 var json = RequestHandler.GetJson("/moar/getPresets");
                 var response = JsonConvert.DeserializeObject<GetPresetsListResponse>(json);
-                return response?.data ?? Array.Empty<Preset>();
+                return response?.data?.ToList() ?? new List<Preset>();
             }
             catch (Exception ex)
             {
                 Plugin.LogSource.LogError($"[GetPresetsList] Failed to fetch presets: {ex.Message}");
-                return Array.Empty<Preset>();
+                return new List<Preset>();
             }
         }
 
-        // --- Server Config ---
+        // --- Server Config Management ---
 
         public static ConfigSettings GetServerConfigWithOverrides()
         {
@@ -93,7 +127,8 @@ namespace MOAR.Helpers
         {
             try
             {
-                RequestHandler.PostJson("/moar/setConfig", JsonConvert.SerializeObject(settings));
+                var json = JsonConvert.SerializeObject(settings);
+                RequestHandler.PostJson("/moar/setConfig", json);
             }
             catch (Exception ex)
             {
@@ -110,8 +145,17 @@ namespace MOAR.Helpers
 
         private static string PostPlayerLocationTo(string endpoint)
         {
-            var request = Methods.GetPlayersCoordinatesAndLevel();
-            return RequestHandler.PostJson(endpoint, JsonConvert.SerializeObject(request));
+            try
+            {
+                var request = Methods.GetPlayersCoordinatesAndLevel();
+                var json = JsonConvert.SerializeObject(request);
+                return RequestHandler.PostJson(endpoint, json);
+            }
+            catch (Exception ex)
+            {
+                Plugin.LogSource.LogError($"[PostPlayerLocationTo] Failed to post to {endpoint}: {ex.Message}");
+                return "Error submitting player position.";
+            }
         }
     }
 }

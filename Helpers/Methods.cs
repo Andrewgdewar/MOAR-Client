@@ -16,17 +16,18 @@ namespace MOAR.Helpers
     public static class Methods
     {
         /// <summary>
-        /// Displays an in-game notification with optional icon.
+        /// Displays an in-game notification and safely broadcasts it in multiplayer if FIKA is present.
         /// </summary>
         public static void DisplayMessage(string message, ENotificationIconType icon = ENotificationIconType.Quest)
         {
-            NotificationManagerClass.DisplayNotification(new DebugNotification
+            var notification = new DebugNotification
             {
-                Duration = ENotificationDurationType.Long,
-                Time = 5f,
                 Notification = message,
                 NotificationIcon = icon
-            });
+            };
+
+            notification.Display();
+            notification.BroadcastToClients();
         }
 
         /// <summary>
@@ -72,16 +73,13 @@ namespace MOAR.Helpers
         }
 
         /// <summary>
-        /// Checks if the announce key is pressed and shows current preset.
-        /// Should be called from an Update loop.
+        /// Checks if the announce key is pressed and displays the current preset name.
         /// </summary>
         public static void CheckAnnounceKey()
         {
-            if (Settings.AnnounceKey?.Value.IsDown() == true)
+            if (Settings.AnnounceKey?.Value.BetterIsDown() == true)
             {
-                var preset = Settings.PresetList?.FirstOrDefault(p => p.Name == Settings.currentPreset.Value);
-                string label = preset?.Label ?? Settings.currentPreset.Value ?? "Unknown";
-                DisplayMessage($"Current preset: {label}", ENotificationIconType.Quest);
+                Settings.AnnounceManually();
             }
         }
     }

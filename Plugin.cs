@@ -9,6 +9,7 @@ using EFT.Communications;
 using HarmonyLib;
 using MOAR.Helpers;
 using MOAR.Patches;
+using MOAR.Components.Notifications;
 
 namespace MOAR
 {
@@ -17,7 +18,7 @@ namespace MOAR
     public class Plugin : BaseUnityPlugin
     {
         public static ManualLogSource LogSource;
-        private static readonly Random _rng = new Random();
+        private static readonly Random _rng = new();
 
         private void Awake()
         {
@@ -30,6 +31,9 @@ namespace MOAR
             Settings.Init(Config);
             Routers.Init(Config);
             EnablePatches();
+
+            if (Settings.IsFika)
+                DebugNotification.RegisterNetworkHandler();
         }
 
         private void EnablePatches()
@@ -57,7 +61,16 @@ namespace MOAR
                 AnnounceResult(Routers.AddPlayerSpawn(), "Added 1 player spawn point");
 
             if (Settings.AnnounceKey.Value.BetterIsDown())
-                Methods.DisplayMessage($"Current preset is {Routers.GetAnnouncePresetName()}", ENotificationIconType.EntryPoint);
+            {
+                var presetName = Routers.GetAnnouncePresetName();
+                var notification = new DebugNotification
+                {
+                    Notification = $"Current preset is {presetName}",
+                    NotificationIcon = ENotificationIconType.EntryPoint
+                };
+                notification.Display();
+                notification.BroadcastToClients();
+            }
         }
 
         private static bool TryPress(KeyboardShortcut shortcut) =>
@@ -67,7 +80,14 @@ namespace MOAR
         {
             var location = Singleton<GameWorld>.Instance?.MainPlayer?.Location ?? "Unknown";
             var message = string.IsNullOrWhiteSpace(result) ? fallbackMessage : result;
-            Methods.DisplayMessage($"{message} in {location}", ENotificationIconType.Default);
+
+            var notification = new DebugNotification
+            {
+                Notification = $"{message} in {location}",
+                NotificationIcon = ENotificationIconType.Default
+            };
+            notification.Display();
+            notification.BroadcastToClients();
         }
 
         public static string GetFlairMessage()

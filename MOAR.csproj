@@ -50,6 +50,9 @@
     <Reference Include="Comfort">
       <HintPath>..\..\RLO\RealisticLighting\References\Comfort.dll</HintPath>
     </Reference>
+    <Reference Include="Fika.Core">
+      <HintPath>..\..\..\..\..\SPT\BepInEx\plugins\Fika.Core.dll</HintPath>
+    </Reference>
     <Reference Include="Newtonsoft.Json">
       <HintPath>..\..\RLO\RealisticLighting\References\Newtonsoft.Json.dll</HintPath>
     </Reference>

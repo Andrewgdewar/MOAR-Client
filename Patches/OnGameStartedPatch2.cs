@@ -1,5 +1,4 @@
-﻿using System;
-using System.Reflection;
+﻿using System.Reflection;
 using EFT;
 using HarmonyLib;
 using MOAR.Components;
@@ -9,20 +8,17 @@ namespace MOAR.Patches
 {
     /// <summary>
     /// Ensures that BotZoneRenderer is added to the BotZone when its Awake method is called.
+    /// Used to visualize or debug spawn zones dynamically during runtime.
     /// </summary>
     public class OnGameStartedPatch2 : ModulePatch
     {
-        protected override MethodBase GetTargetMethod()
-        {
-            // Patch the Awake method of BotZone to ensure BotZoneRenderer is added when BotZone is initialized.
-            return AccessTools.Method(typeof(BotZone), "Awake");
-        }
+        protected override MethodBase GetTargetMethod() =>
+            AccessTools.Method(typeof(BotZone), "Awake");
 
-        [PatchPrefix]
-        private static void PatchPrefix(BotZone __instance)
+        [PatchPostfix]
+        private static void Postfix(BotZone __instance)
         {
-            // Ensure the BotZoneRenderer is only added if it doesn't already exist.
-            if (__instance.GetComponent<BotZoneRenderer>() == null)
+            if (__instance != null && __instance.GetComponent<BotZoneRenderer>() == null)
             {
                 __instance.gameObject.AddComponent<BotZoneRenderer>();
             }

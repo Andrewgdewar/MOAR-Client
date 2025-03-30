@@ -1,9 +1,9 @@
-﻿using System;
-using System.Reflection;
+﻿using System.Reflection;
 using EFT;
 using HarmonyLib;
 using MOAR.Components;
 using SPT.Reflection.Patching;
+using UnityEngine;
 
 namespace MOAR.Patches
 {
@@ -12,19 +12,19 @@ namespace MOAR.Patches
     /// </summary>
     public class OnGameStartedPatch : ModulePatch
     {
-        protected override MethodBase GetTargetMethod()
-        {
-            // Simplified target method lookup (method is parameterless)
-            return AccessTools.Method(typeof(GameWorld), "OnGameStarted");
-        }
+        protected override MethodBase GetTargetMethod() =>
+            AccessTools.Method(typeof(GameWorld), nameof(GameWorld.OnGameStarted));
 
         [PatchPrefix]
-        private static void PatchPrefix(GameWorld __instance)
+        private static void Prefix(GameWorld __instance)
         {
-            // Ensure the BotZoneRenderer is only added if it doesn't already exist
-            if (__instance.GetComponent<BotZoneRenderer>() == null)
+            if (__instance == null)
+                return;
+
+            if (!__instance.TryGetComponent<BotZoneRenderer>(out _))
             {
                 __instance.gameObject.AddComponent<BotZoneRenderer>();
+                Plugin.LogSource.LogDebug("[OnGameStartedPatch] BotZoneRenderer added to GameWorld.");
             }
         }
     }
