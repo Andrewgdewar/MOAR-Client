@@ -1,134 +1,117 @@
-using System;
+﻿using System;
+using System.Linq;
 using BepInEx.Configuration;
 using Newtonsoft.Json;
+using SPT.Common.Http;
+using MOAR.Helpers;
 
 namespace MOAR.Helpers
 {
     internal class Routers
     {
-        public static string GetCurrentPresetLabel()
+        public static void Init(ConfigFile config) { }
+
+        // --- Preset Accessors ---
+
+        public static string GetCurrentPresetLabel() => RequestHandler.GetJson("/moar/currentPreset");
+        public static string GetAnnouncePresetLabel() => RequestHandler.GetJson("/moar/announcePreset");
+
+        public static string GetCurrentPresetName()
         {
-            var req = SPT.Common.Http.RequestHandler.GetJson("/moar/currentPreset");
-            return req;
-        }
-
-        public static string AddBotSpawn()
-        {
-            var request = Methods.GetPlayersCoordinatesAndLevel();
-
-            var req = SPT.Common.Http.RequestHandler.PostJson(
-                "/moar/addBotSpawn",
-                JsonConvert.SerializeObject(request)
-            );
-
-            return req.ToString(); // no need to parse bare strings
-        }
-
-        public static string AddSniperSpawn()
-        {
-            var request = Methods.GetPlayersCoordinatesAndLevel();
-
-            var req = SPT.Common.Http.RequestHandler.PostJson(
-                "/moar/addSniperSpawn",
-                JsonConvert.SerializeObject(request)
-            );
-
-            return req.ToString(); // no need to parse bare strings
-        }
-
-        public static string DeleteBotSpawn()
-        {
-            var request = Methods.GetPlayersCoordinatesAndLevel();
-
-            var req = SPT.Common.Http.RequestHandler.PostJson(
-                "/moar/deleteBotSpawn",
-                JsonConvert.SerializeObject(request)
-            );
-
-            return req.ToString(); // no need to parse bare strings
-        }
-
-        public static string AddPlayerSpawn()
-        {
-            var request = Methods.GetPlayersCoordinatesAndLevel();
-
-            var req = SPT.Common.Http.RequestHandler.PostJson(
-                "/moar/addPlayerSpawn",
-                JsonConvert.SerializeObject(request)
-            );
-
-            return req.ToString(); // no need to parse bare strings
-        }
-
-        public static string GetAnnouncePresetLabel()
-        {
-            var req = SPT.Common.Http.RequestHandler.GetJson("/moar/announcePreset");
-            return req;
+            var label = GetCurrentPresetLabel();
+            var preset = Settings.PresetList?.FirstOrDefault(p => p.Label == label);
+            return preset?.Name ?? "Unknown";
         }
 
         public static string GetAnnouncePresetName()
         {
-            var preset = GetAnnouncePresetLabel();
-
-            var result = Array.Find(Settings.PresetList, (item) => item.Label.Equals(preset))?.Name;
-
-            return result;
+            var label = GetAnnouncePresetLabel();
+            var preset = Settings.PresetList?.FirstOrDefault(p => p.Label == label);
+            return preset?.Name ?? "Unknown";
         }
 
-        public static string GetCurrentPresetName()
+        public static string SetPreset(string label)
         {
-            var preset = GetCurrentPresetLabel();
-
-            var result = Array.Find(Settings.PresetList, (item) => item.Label.Equals(preset))?.Name;
-
-            return result;
+            try
+            {
+                var request = new SetPresetRequest { Preset = label };
+                return RequestHandler.PostJson("/moar/setPreset", JsonConvert.SerializeObject(request));
+            }
+            catch (Exception ex)
+            {
+                Plugin.LogSource.LogError($"[SetPreset] Failed to set preset '{label}': {ex.Message}");
+                return "Failed to set preset.";
+            }
         }
 
         public static Preset[] GetPresetsList()
         {
-            return JsonConvert
-                    .DeserializeObject<GetPresetsListResponse>(
-                        SPT.Common.Http.RequestHandler.GetJson("/moar/getPresets")
-                    )
-                    ?.data ?? [];
+            try
+            {
+                var json = RequestHandler.GetJson("/moar/getPresets");
+                var response = JsonConvert.DeserializeObject<GetPresetsListResponse>(json);
+                return response?.data ?? Array.Empty<Preset>();
+            }
+            catch (Exception ex)
+            {
+                Plugin.LogSource.LogError($"[GetPresetsList] Failed to fetch presets: {ex.Message}");
+                return Array.Empty<Preset>();
+            }
+        }
+
+        // --- Server Config ---
+
+        public static ConfigSettings GetServerConfigWithOverrides()
+        {
+            try
+            {
+                var json = RequestHandler.GetJson("/moar/getServerConfig");
+                return JsonConvert.DeserializeObject<ConfigSettings>(json) ?? new ConfigSettings();
+            }
+            catch (Exception ex)
+            {
+                Plugin.LogSource.LogError($"[GetServerConfigWithOverrides] Error: {ex.Message}");
+                return new ConfigSettings();
+            }
         }
 
         public static ConfigSettings GetDefaultConfig()
         {
-            return JsonConvert.DeserializeObject<ConfigSettings>(
-                SPT.Common.Http.RequestHandler.GetJson("/moar/getDefaultConfig")
-            );
+            try
+            {
+                var json = RequestHandler.GetJson("/moar/getDefaultConfig");
+                return JsonConvert.DeserializeObject<ConfigSettings>(json) ?? new ConfigSettings();
+            }
+            catch (Exception ex)
+            {
+                Plugin.LogSource.LogError($"[GetDefaultConfig] Error: {ex.Message}");
+                return new ConfigSettings();
+            }
         }
 
-        public static ConfigSettings GetServerConfigWithOverrides()
+        public static void SetOverrideConfig(ConfigSettings settings)
         {
-            return JsonConvert.DeserializeObject<ConfigSettings>(
-                SPT.Common.Http.RequestHandler.GetJson("/moar/getServerConfigWithOverrides")
-            );
+            try
+            {
+                RequestHandler.PostJson("/moar/setConfig", JsonConvert.SerializeObject(settings));
+            }
+            catch (Exception ex)
+            {
+                Plugin.LogSource.LogError($"[SetOverrideConfig] Failed to push config: {ex.Message}");
+            }
         }
 
-        public static string SetPreset(string preset)
+        // --- Spawn Tooling ---
+
+        public static string AddBotSpawn() => PostPlayerLocationTo("/moar/addBotSpawn");
+        public static string AddSniperSpawn() => PostPlayerLocationTo("/moar/addSniperSpawn");
+        public static string DeleteBotSpawn() => PostPlayerLocationTo("/moar/deleteBotSpawn");
+        public static string AddPlayerSpawn() => PostPlayerLocationTo("/moar/addPlayerSpawn");
+
+        private static string PostPlayerLocationTo(string endpoint)
         {
-            var request = new SetPresetRequest { Preset = preset };
-
-            var req = SPT.Common.Http.RequestHandler.PostJson(
-                "/moar/setPreset",
-                JsonConvert.SerializeObject(request)
-            );
-
-            return req.ToString(); // no need to parse bare strings
+            var request = Methods.GetPlayersCoordinatesAndLevel();
+            return RequestHandler.PostJson(endpoint, JsonConvert.SerializeObject(request));
         }
-
-        public static bool SetOverrideConfig(ConfigSettings configs)
-        {
-            var req = SPT.Common.Http.RequestHandler.PostJson(
-                "/moar/setOverrideConfig",
-                JsonConvert.SerializeObject(configs)
-            );
-
-            return true; // no need to parse bare strings
-        }
-
-        public static void Init(ConfigFile config) { }
     }
 }

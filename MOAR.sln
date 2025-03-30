@@ -1,9 +1,9 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
-VisualStudioVersion = 17.5.002.0
+VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MOAR", "MOAR.csproj", "{557EF511-CB27-4BE4-AE0F-11A537D1DC7E}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MOAR", "MOAR.csproj", "{82404D54-346E-4128-AE5D-1B98D1327932}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -11,15 +11,12 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{557EF511-CB27-4BE4-AE0F-11A537D1DC7E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{557EF511-CB27-4BE4-AE0F-11A537D1DC7E}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{557EF511-CB27-4BE4-AE0F-11A537D1DC7E}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{557EF511-CB27-4BE4-AE0F-11A537D1DC7E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{82404D54-346E-4128-AE5D-1B98D1327932}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{82404D54-346E-4128-AE5D-1B98D1327932}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{82404D54-346E-4128-AE5D-1B98D1327932}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{82404D54-346E-4128-AE5D-1B98D1327932}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
-	EndGlobalSection
-	GlobalSection(ExtensibilityGlobals) = postSolution
-		SolutionGuid = {EA69D7EB-43B3-4928-995C-6214F95AD16F}
 	EndGlobalSection
 EndGlobal

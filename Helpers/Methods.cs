@@ -1,48 +1,88 @@
+﻿using System;
+using System.Linq;
+using System.Threading.Tasks;
 using Comfort.Common;
 using EFT;
 using EFT.Communications;
+using MOAR.Components.Notifications;
 using SPT.Reflection.Utils;
+using UnityEngine;
 
 namespace MOAR.Helpers
 {
-    public class Methods
+    /// <summary>
+    /// Common utility methods for UI messaging, location sync, and player coordinate capture.
+    /// </summary>
+    public static class Methods
     {
-        public static void DisplayMessage(
-            string message,
-            ENotificationIconType notificationType = ENotificationIconType.Quest
-        )
+        /// <summary>
+        /// Displays an in-game notification with optional icon.
+        /// </summary>
+        public static void DisplayMessage(string message, ENotificationIconType icon = ENotificationIconType.Quest)
         {
-            var currentMessage = new GClass2269(
-                message,
-                ENotificationDurationType.Long,
-                notificationType
-            );
-
-            NotificationManagerClass.DisplayNotification(currentMessage);
+            NotificationManagerClass.DisplayNotification(new DebugNotification
+            {
+                Duration = ENotificationDurationType.Long,
+                Time = 5f,
+                Notification = message,
+                NotificationIcon = icon
+            });
         }
 
-        public static async void RefreshLocationInfo()
+        /// <summary>
+        /// Triggers a location info refresh by querying the backend session.
+        /// </summary>
+        public static async Task RefreshLocationInfo()
         {
-            if (PatchConstants.BackEndSession != null)
-                await PatchConstants.BackEndSession.GetLevelSettings();
-            // await PatchConstants.BackEndSession.GetWeatherAndTime();
+            try
+            {
+                if (PatchConstants.BackEndSession != null)
+                    await PatchConstants.BackEndSession.GetLevelSettings();
+            }
+            catch (Exception ex)
+            {
+                Plugin.LogSource.LogError($"[RefreshLocationInfo] {ex.Message}");
+            }
         }
 
+        /// <summary>
+        /// Returns current player position and location for use in spawn requests.
+        /// </summary>
         public static AddSpawnRequest GetPlayersCoordinatesAndLevel()
         {
-            var position = Singleton<GameWorld>.Instance.MainPlayer.Position;
-            var location = Singleton<GameWorld>.Instance.MainPlayer.Location;
+            var player = Singleton<GameWorld>.Instance?.MainPlayer;
 
+            if (player == null)
+            {
+                Plugin.LogSource.LogWarning("[GetPlayersCoordinatesAndLevel] MainPlayer is null");
+                return new AddSpawnRequest { map = "Unknown", position = new Ixyz() };
+            }
+
+            Vector3 pos = player.Position;
             return new AddSpawnRequest
             {
-                map = location,
+                map = player.Location ?? "Unknown",
                 position = new Ixyz
                 {
-                    x = position.x,
-                    y = position.y,
-                    z = position.z,
-                },
+                    x = pos.x,
+                    y = pos.y,
+                    z = pos.z
+                }
             };
+        }
+
+        /// <summary>
+        /// Checks if the announce key is pressed and shows current preset.
+        /// Should be called from an Update loop.
+        /// </summary>
+        public static void CheckAnnounceKey()
+        {
+            if (Settings.AnnounceKey?.Value.IsDown() == true)
+            {
+                var preset = Settings.PresetList?.FirstOrDefault(p => p.Name == Settings.currentPreset.Value);
+                string label = preset?.Label ?? Settings.currentPreset.Value ?? "Unknown";
+                DisplayMessage($"Current preset: {label}", ENotificationIconType.Quest);
+            }
         }
     }
 }

@@ -1,34 +1,10 @@
+﻿using System;
+
 namespace MOAR
 {
-    public class Ixyz
-    {
-        public float x { get; set; }
-        public float y { get; set; }
-        public float z { get; set; }
-    }
-
-    public class AddSpawnRequest
-    {
-        public string map { get; set; }
-        public Ixyz position { get; set; }
-    }
-
-    public class GetPresetsListResponse
-    {
-        public Preset[] data;
-    }
-
-    public class Preset
-    {
-        public string Name { get; set; }
-        public string Label { get; set; }
-    }
-
-    public class SetPresetRequest
-    {
-        public string Preset { get; set; }
-    }
-
+    /// <summary>
+    /// Represents all configuration parameters for spawn behavior and AI logic.
+    /// </summary>
     public class ConfigSettings
     {
         public double pmcDifficulty { get; set; }
